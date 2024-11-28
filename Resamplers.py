@@ -1,4 +1,12 @@
 import numpy as np
+"""
+Stratified really should be its own class that just inherits from 
+the base class Resampler - but would only really need to change this if 
+I added new resampling methods that are actually useful like
+conditional importance resampling or something similar although
+CIRS would need all the methods that stratified has anyway
+"""
+
 
 class Resampler():
     def __init__(self, old_samples, old_weights):

@@ -1,6 +1,6 @@
 import numpy as np
 
-class approx_opt():
+class Approx_Opt():
     def __init__(self, old_samples, new_samples):
         self._x_arr = np.array(old_samples)
         self._x_hat_arr = np.array(new_samples)
@@ -41,8 +41,6 @@ class approx_opt():
     def bivar_normal_p(self, x, mu):
         x_minus_mu = x - mu
         expr1 = x_minus_mu.T @ self._Sxcxh_inv @ x_minus_mu
-        expr3 = (np.e**(-0.5*expr1))
-        #print(f'2: {self.k}, 3: {expr3}')
         return self.k*(np.exp(-0.5*expr1))
     
     def calc_probs(self):
@@ -56,7 +54,7 @@ def main():
     n = 20
     x1 = np.random.rand(n,2)
     x2 = np.random.rand(n,2)
-    print(approx_opt(x1,x2).probs[:10])
+    print(Approx_Opt(x1,x2).probs[:10])
     return
 
 if __name__ == '__main__':

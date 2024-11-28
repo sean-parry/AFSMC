@@ -1,6 +1,7 @@
 import numpy as np
-from Kernels import approx_opt
+from Kernels import Approx_Opt
 from Resamplers import Resampler
+from Proposals import Random_Walk
        
 
 class SMC():
@@ -8,13 +9,16 @@ class SMC():
                  n_samples : int, 
                  n_iters : int, 
                  n_star : int = None,
-                 kernel_class = approx_opt,
+                 proposal_obj = None,
+                 kernel_class = Approx_Opt,
                  resample_alg : function = Resampler.stratified):
         self.target = target_function
         self.n_samples = n_samples
         self.n_iters = n_iters
         self.n_star = self.n_samples/2 if n_star is None else n_star
         
+        self.proposal_class = proposal_obj
+        self.proposal_obj = None
         self.kernel_class = kernel_class
         self.resampler_alg = resample_alg
         self.Samples = None
@@ -33,8 +37,8 @@ class SMC():
 
     
     def new_proposal(self):
-        new_proposal = []
-        return new_proposal
+        self.proposal_obj.update(self.samples)
+        return self.proposal_obj.new_samples
 
     def proposal_probs(self, new_samples):
         """
@@ -65,6 +69,10 @@ class SMC():
         self.samples = new_samples
 
     def iter_main_loop(self, n_iters):
+        if self.proposal_obj == None:
+            print(f'warning proposal object is None, must give initialised'
+                  f'proposal object from proposal.py')
+            return
         for _ in range(self.n_iters):
             self.main_loop()
 
