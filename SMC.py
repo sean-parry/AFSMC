@@ -7,9 +7,9 @@ import Prob_Utils
        
 
 class SMC():
-    def __init__(self, target_function, 
-                 n_samples : int, 
-                 n_iters : int, 
+    def __init__(self, target_function = None, 
+                 n_samples : int = None, 
+                 n_iters : int = None,
                  initial_proposal_obj = Initial_Proposals.Initial_Proposal(),
                  proposal_obj = Proposals.Proposal(),
                  kernel_class = Approx_Opt,
@@ -20,12 +20,13 @@ class SMC():
         self.n_iters = n_iters
         self.n_star = self.n_samples/2 if n_star is None else n_star
         
+        initial_proposal_obj.n_samples = n_samples
         self.initial_proposal_obj = initial_proposal_obj
         self.proposal_obj = proposal_obj
         self.kernel_class = kernel_class
         self.resample_obj = resample_obj
-        self.Samples = None
-        self.iter_main_loop()
+        self.samples = None
+        #self.run()
     
     def norm_weights(self):
         sum_weights = sum(self.weights)
@@ -80,7 +81,12 @@ class SMC():
         self.weights = np.array(initial_weights)
 
 
-    def iter_main_loop(self):
+    def run(self):
+        """
+        every time run is called we run the smc again - nothing is kept from 
+        the previous run, if you wish to change something about the smc then
+        just change one of the smc objects variables then call run
+        """
         self.initialise_samples_and_weights()
         for _ in range(self.n_iters):
             self.main_loop()
@@ -92,22 +98,24 @@ def main():
         """
         takes a vector sample returns a probability
         """
-        return Prob_Utils.multivariate_normal_p(sample, [3, 2], np.eye(2))
+        return Prob_Utils.multivariate_normal_p(sample, [3, 2], np.eye(2)*0.5)
     
     smc = SMC(target_function=target_function,
               n_samples=100,
-              n_iters=200,
-              initial_proposal_obj=Initial_Proposals.Strandard_Gauss_Noise(dim_samples = 2, n_samples=100),
+              n_iters=100,
+              initial_proposal_obj=Initial_Proposals.Strandard_Gauss_Noise(dim_samples = 2),
               proposal_obj= Proposals.Random_Walk(step_sizes = [0.2,0.2]))
     
-    sum_w = 0
-    ans = [0,0]
-    for s, w in zip(smc.samples, smc.weights):
-        # print(f'sample value: {s}, weight value {w}')
-        sum_w += w
-        ans += s*w
-    print(f'total weight sum: {sum_w}')
-    print(f'estimate is {ans}')
+    for _ in range(2):
+        smc.run()
+        sum_w = 0
+        ans = [0,0]
+        for s, w in zip(smc.samples, smc.weights):
+            # print(f'sample value: {s}, weight value {w}')
+            sum_w += w
+            ans += s*w
+        print(f'total weight sum: {sum_w}')
+        print(f'estimate is {ans}')
     return
 
 if __name__== '__main__':

@@ -15,15 +15,18 @@ class Approx_Opt():
         self._x_arr = np.array(old_samples)
         self._x_hat_arr = np.array(new_samples)
         self.d = self._x_arr.shape[1]
-        self.gen_gaussian()
+        self._gen_gaussian()
         self.probs = []
-        self.calc_probs()
+        self._calc_probs()
         self.probs = np.array(self.probs)
+        return
+        # its actually ok for vals to be above 1 bc we have a prob density 
+        # function that just need to integrate to one
         if max(self.probs >= 1):
-            # print(f'Warning: probability values greater than 1 inside of optimal l kernel, this may be due to singularities')
+            print(f'Warning: probability values greater than 1 inside of optimal l kernel, this may be due to singularities')
             pass
 
-    def gen_gaussian(self):
+    def _gen_gaussian(self):
         """samples should be a vstack of vectors
         if vector of samples is dimension m, and there
         are n samples then funciton expects a 
@@ -49,28 +52,29 @@ class Approx_Opt():
         for small covar matricies so going to use scipy instead - since the dims
         of the hyperparam space never get too high this shouldn't be too slow 
         """
-        # self._Sxcxh_inv = np.linalg.inv(self._Sxcxh)
-        # self.k = ((2*np.pi)**(-self.d/2))*((np.linalg.det(self._Sxcxh))**(-1/2))
+        self._Sxcxh_inv = np.linalg.inv(self._Sxcxh)
+        self.k = ((2*np.pi)**(-self.d/2))*((np.linalg.det(self._Sxcxh))**(-1/2))
 
-    def bivar_normal_p(self, x, mu):
-        # x_minus_mu = x - mu
-        # expr1 = x_minus_mu.T @ self._Sxcxh_inv @ x_minus_mu
-        # return self.k*(np.exp(-0.5*expr1))
-        log_p = multivariate_normal.logpdf(x,mu, self._Sxcxh)
-        p = np.exp(log_p)
-        return p
+    def _bivar_normal_p(self, x, mu):
+        x_minus_mu = x - mu
+        expr1 = x_minus_mu.T @ self._Sxcxh_inv @ x_minus_mu
+        return self.k*(np.exp(-0.5*expr1))
+        # log_p = multivariate_normal.logpdf(x,mu, self._Sxcxh)
+        # p = np.exp(log_p)
+        # return p
     
-    def calc_probs(self):
+    def _calc_probs(self):
         expr1 = self._Sxxh @ self._Sxhxh_inv
         for old_s, new_s in zip(self._x_arr, self._x_hat_arr):
             mu_xcxh = self._mu_x + expr1 @ (new_s-self._mu_xh)
-            p = self.bivar_normal_p(old_s, mu_xcxh)
+            p = self._bivar_normal_p(old_s, mu_xcxh)
             if np.isnan(p):
                 p = 0
             self.probs.append(p)
 
 def main():
     # fails for this test case gives values over 1
+    np.random.seed(42)
     n = 20
     x1 = np.random.rand(n,2)
     x2 = np.random.rand(n,2)

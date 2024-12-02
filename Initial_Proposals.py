@@ -16,7 +16,7 @@ class Initial_Proposal():
         return None
 
 class Strandard_Gauss_Noise(Initial_Proposal):
-    def __init__(self,  dim_samples : int , n_samples : int):
+    def __init__(self,  dim_samples : int , n_samples : int = None):
         super().__init__(dim_samples, n_samples)
     
     def _calc_p(self):
