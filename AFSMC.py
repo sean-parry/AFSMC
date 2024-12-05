@@ -1,8 +1,5 @@
 import SMC
-import numpy as np
 import gpflow
-import Initial_Proposals
-import Proposals
 """
 The goal of the file is to for a set of data make a gp with each sample output
 of the smc which is trying to pick samples to minimise LOOCV or kl divergence
@@ -22,11 +19,11 @@ class AFSMC():
         self.gp_array = []
         self.acq_func_array = [] # minimise the additive weight*acqfunc meta function
         next_eval_point = 1
-        return next_eval_point = 1
+        return next_eval_point 
 
 
     def _populate_gp_array(self):
-
+        return
     
     def get_next_eval_point(self):
         """
