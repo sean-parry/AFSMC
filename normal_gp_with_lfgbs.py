@@ -2,6 +2,7 @@ import torch
 import utils
 import numpy as np
 import gpflow
+import matplotlib.pyplot as plt
 
 class DefaultMethodClass():
     def __init__(self, func_class,
@@ -59,7 +60,7 @@ class AverageMethod():
 
 class NormalGp(DefaultMethodClass):
     def __init__(self, func_class : utils.test_functions.FuncToMinimise,
-                 n_iters = 100,
+                 n_iters = 200,
                  n_random_evals = 20,
                  limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
         
@@ -78,49 +79,79 @@ class NormalGp(DefaultMethodClass):
         samples = (np.random.rand(n_rand, self.dims) * self.limit_difs) + self.limit_mins
         for x in samples:
             self.eval_sample(x)
-
-    def incumbent(self):
-        return min(self.y_train)
     
-    def expected_improvement(self, x, kappa = 0.0):
-        x = np.array([x])
-        incumbent = self.incumbent()
-        mu_y, sd_y = self.model.predict_f(x)
-        gamma_y = (mu_y - (incumbent + kappa))/ sd_y
-        tmp_erf = erf(gamma_y / np.sqrt(2))
-        tmp_ei_no_std = 0.5*gamma_y * (1 + tmp_erf) \
-            + np.exp(-gamma_y**2/2)/np.sqrt(2*np.pi)
-        ei = sd_y * tmp_ei_no_std
-        return float(ei)
-    
-    def gen_sample(self):
-        """
-        make a new gp over the curr dataset, optimize it with scipy optimize
-        choose new x* inside the limits
-        evaluate that point - which will automatically add it to the dataset
-        exit return nothing
-        """
-        self.model = gpflow.models.GPR(
+    def get_gp(self):
+        model = gpflow.models.GPR(
             (self.X_train, self.y_train),
-            kernel = gpflow.kernels.Matern52()
-        )
+            kernel = gpflow.kernels.Matern52())
         opt = gpflow.optimizers.Scipy()
-        opt.minimize(self.model.training_loss, self.model.trainable_variables)
+        opt.minimize(model.training_loss, model.trainable_variables)
+        return model
+
+    def gen_sample(self):
+        gp = self.get_gp()
+        acq = utils.acq_functions.EI(gp, self.limits)
         
-        # res = gp_minimize(self.expected_improvement,self.limits,n_calls=40)
+        x = torch.tensor([0.0,0.0], requires_grad=True) # this should prob be random
+        optimizer = torch.optim.LBFGS([x], lr=1.0, max_iter = 100, history_size=10)
+
+        def closure(opt = optimizer, func = acq.sample, x = x):
+            opt.zero_grad()
+            loss = func(x)
+            loss.backward()
+            return loss
         
-        return res.x
+        for _ in range(10):
+            optimizer.step(closure)
+        
+        print(x.data)
+            
 
     def iter_func_evals(self):
         for i in range(self.n_iters):
-            if i%(self.n_iters//10) == 0:
-                print(f'{i/(self.n_iters)*100} % done')
-            sample = self.gen_sample()
-            self.eval_sample(sample)
-        print('Finished Evaling a GP'
-              )
+            try:
+                if i%(self.n_iters//10) == 0:
+                    print(f'{i/(self.n_iters)*100} % done')
+                sample = self.gen_sample()
+                self.eval_sample(sample)
+            except:
+                pass
+        print('Finished Evaling a GP')
+
+class AverageMethod():
+    def __init__(self, 
+                 method_class : DefaultMethodClass,
+                 func_class : utils.test_functions.FuncToMinimise,
+                 n_method_instances : int = 30):
+        self.method_objs = [method_class(func_class = func_class) for _ in range(n_method_instances)]
+        self.sum_regret = []
+        self.get_sum_regret()
+
+        self.mean_regret = self.sum_regret / n_method_instances
+
+    def get_sum_regret(self):
+        self.sum_regret = self.method_objs[0].get_regret()
+        for meth in self.method_objs[1:]:
+            self.sum_regret += meth.get_regret()
+
+    def get_result(self):
+        return {'name': self.method_objs[0].method_name,
+                'regret':self.mean_regret}
+    
+def plot_results(results):
+    for result in results:
+        plt.plot(result['regret'], label=result['name'])
+        plt.legend()
+    plt.yscale(value="log")
+    plt.plot()
 
 def main():
+    res_arr = []
+    gp = AverageMethod(NormalGp, 
+                  utils.test_functions.Branin,
+                  n_method_instances=1)
+    res_arr.append(gp.get_result())
+    plot_results(res_arr)
     return
 
 if __name__ == '__main__':
