@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 
 # having an import issue here that needs fixing should be easy i hope
 # import test_functions and import methods doesn't just work for some reason
-from ..utils.methods import *
-from ..utils.test_functions import *
+import test_functions
+import methods
 
 
 class AverageMethod():
     def __init__(self, 
-                 method_class : DefaultMethodClass,
-                 func_class : FuncToMinimise,
+                 method_class : methods.DefaultMethodClass,
+                 func_class : test_functions.FuncToMinimise,
                  n_method_instances : int = 30):
         self.method_objs = [method_class(func_class = func_class) for _ in range(n_method_instances)]
         self.sum_regret = []
