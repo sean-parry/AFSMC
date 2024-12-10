@@ -1,21 +1,20 @@
 import numpy as np
-from Kernels import Approx_Opt
-import Resamplers
-import Proposals
-import Initial_Proposals
-import Prob_Utils
-       
+
+#probably not the pretiest way of fixing the import issues but it works
+import os, sys
+sys.path.append(os.getcwd())
+from SMC import prob_utils, initial_proposals, kernels, proposals, resamplers, target_functions
 
 class SMC():
-    def __init__(self, target_function = None, 
+    def __init__(self, target_obj = target_functions.base_target(), 
                  n_samples : int = None, 
                  n_iters : int = None,
-                 initial_proposal_obj = Initial_Proposals.Initial_Proposal(),
-                 proposal_obj = Proposals.Proposal(),
-                 kernel_class = Approx_Opt,
-                 resample_obj = Resamplers.Staratified(),
+                 initial_proposal_obj = initial_proposals.Initial_Proposal(),
+                 proposal_obj = proposals.Proposal(),
+                 kernel_class = kernels.Approx_Opt,
+                 resample_obj = resamplers.Staratified(),
                  n_star : int = None):
-        self.target = target_function
+        self.target = target_obj.p_sample
         self.n_samples = n_samples
         self.n_iters = n_iters
         self.n_star = self.n_samples/2 if n_star is None else n_star
@@ -94,17 +93,11 @@ class SMC():
 
 
 def main():
-    def target_function(sample):
-        """
-        takes a vector sample returns a probability
-        """
-        return Prob_Utils.multivariate_normal_p(sample, [3, 2], np.eye(2)*0.5)
-    
-    smc = SMC(target_function=target_function,
+    smc = SMC(target_obj=target_functions.normal_dist_2d(),
               n_samples=100,
               n_iters=100,
-              initial_proposal_obj=Initial_Proposals.Strandard_Gauss_Noise(dim_samples = 2),
-              proposal_obj= Proposals.Random_Walk(step_sizes = [0.2,0.2]))
+              initial_proposal_obj=initial_proposals.Strandard_Gauss_Noise(dim_samples = 2),
+              proposal_obj= proposals.Random_Walk(step_sizes = [0.2,0.2]))
     
     for _ in range(2):
         smc.run()

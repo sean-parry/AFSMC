@@ -1,8 +1,10 @@
 import gpflow
 import numpy as np
-import test_functions
-import acq_functions
 import scipy
+
+import os, sys
+sys.path.append(os.getcwd())
+from utils import acq_functions, test_functions
 
 class DefaultMethodClass():
     def __init__(self, func_class,

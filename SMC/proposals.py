@@ -1,6 +1,8 @@
 import numpy as np
-import Prob_Utils
-import Kernels
+
+import os, sys
+sys.path.append(os.getcwd())
+from SMC import prob_utils, kernels
 
 class Proposal():
     def __init__(self, old_samples  : list[list[float]] = None):
@@ -39,7 +41,7 @@ class Random_Walk(Proposal):
     def _calc_p(self):
         self.probs = []
         for old_s, new_s in zip(self.old_samples, self.new_samples):
-            p = Prob_Utils.multivariate_normal_p(new_s, old_s, self.covar_mat)
+            p = prob_utils.multivariate_normal_p(new_s, old_s, self.covar_mat)
             self.probs.append(p)
 
     def update(self, samples : list[list[float]]):
@@ -75,7 +77,7 @@ class NUTS(Proposal):
     
     def _calc_p(self):
         return
-        self.probs = Kernels.Approx_Opt(-self.momentum_vecs, self.new_samples).probs
+        self.probs = kernels.Approx_Opt(-self.momentum_vecs, self.new_samples).probs
 
     def update(self, samples: list[list[float]]):
         """
@@ -104,7 +106,7 @@ def main():
     rw.update(np.random.rand(10,2))
     return
     def target(sample):
-        return Prob_Utils.multivariate_normal_p(sample, [2,2],np.eye(2))
+        return prob_utils.multivariate_normal_p(sample, [2,2],np.eye(2))
     n = 500
     old_samples = np.random.rand(n,2)
     step_sizes = [0.2,0.2]

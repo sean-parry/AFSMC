@@ -1,11 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# having an import issue here that needs fixing should be easy i hope
-# import test_functions and import methods doesn't just work for some reason
-import test_functions
-import methods
-
+import os, sys
+sys.path.append(os.getcwd())
+from utils import methods, test_functions
 
 class AverageMethod():
     def __init__(self, 
@@ -13,6 +11,7 @@ class AverageMethod():
                  func_class : test_functions.FuncToMinimise,
                  n_method_instances : int = 30):
         self.method_objs = [method_class(func_class = func_class) for _ in range(n_method_instances)]
+        self.n_instances = n_method_instances
         self.sum_regret = []
         self.get_sum_regret()
 
@@ -25,4 +24,5 @@ class AverageMethod():
 
     def get_result(self):
         return {'name': self.method_objs[0].method_name,
-                'regret':self.mean_regret}
+                'regret':self.mean_regret,
+                'n_instances':self.n_instances}

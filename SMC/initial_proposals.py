@@ -1,5 +1,9 @@
 import numpy as np
-import Prob_Utils
+
+import os, sys
+sys.path.append(os.getcwd())
+from SMC import prob_utils
+
 
 class Initial_Proposal():
     def __init__(self, dim_samples : int = None, n_samples : int = None):
@@ -21,7 +25,7 @@ class Strandard_Gauss_Noise(Initial_Proposal):
     
     def _calc_p(self):
         for s in self.samples:
-            p = Prob_Utils.multivariate_normal_p(s, [0]*self.dim_samples, np.eye(self.dim_samples))
+            p = prob_utils.multivariate_normal_p(s, [0]*self.dim_samples, np.eye(self.dim_samples))
             self.probs.append(p)
 
     def sample(self):
