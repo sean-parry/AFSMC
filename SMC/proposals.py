@@ -92,7 +92,6 @@ class Defensive_Sampling(Proposal):
         for i, (unif_prob, unscaled_noise, old_sample) in enumerate(zip(unif_probs, noise_arr, self.old_samples)):
             for cdf_prob, step_size in zip(self.cdf_probs[1:], self.step_sizes):
                 if unif_prob<cdf_prob:
-                    print(f'old sampls: {old_sample}, step size {step_size} , unscaled noise {unscaled_noise}')
                     self.new_samples[i] = old_sample + unscaled_noise * step_size
                     break
     

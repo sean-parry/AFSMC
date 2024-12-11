@@ -97,7 +97,7 @@ def main():
               n_samples=100,
               n_iters=100,
               initial_proposal_obj=initial_proposals.Strandard_Gauss_Noise(dim_samples = 2),
-              proposal_obj= proposals.Random_Walk(step_sizes = [0.2,0.2]))
+              proposal_obj= proposals.Defensive_Sampling())
     
     for _ in range(2):
         smc.run()
