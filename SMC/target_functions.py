@@ -62,37 +62,52 @@ class gp_fit(base_target):
         """
         the sample is the hyperparams for the gp over the model space
         """
-        variance = sample[:1][0]
-        lengths = (sample[1:])
-        kernel = mt52(variance=variance, lengthscales=lengths)
-        model = gpflow.models.GPR((self.X_train, self.y_train),
-                          kernel=kernel)
-        
-
-        mean, cov = model.predict_y(self.X_test, full_cov=False)
-        mean = np.squeeze(mean.numpy())
-        cov = np.squeeze(cov.numpy())
-
-        return prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov))
-    
-    def p_sample_batch(self, samples : list[list[float]]):
-        probs = []
-        for sample in samples:
+        if all(s>0 for s in sample):
             variance = sample[:1][0]
             lengths = (sample[1:])
             kernel = mt52(variance=variance, lengthscales=lengths)
             model = gpflow.models.GPR((self.X_train, self.y_train),
                             kernel=kernel)
-        
+
             mean, cov = model.predict_y(self.X_test, full_cov=False)
             mean = np.squeeze(mean.numpy())
             cov = np.squeeze(cov.numpy())
-            probs.append(prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov)))
 
+            return prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov))
+        else:
+            print(f'Warning: negative or 0 value found in sample')
+            return 1e-16
+        
+    def p_sample_batch(self, samples : list[list[float]]):
+        probs = []
+        for sample in samples:
+            if all(s>0 for s in sample):
+                variance = sample[:1][0]
+                lengths = (sample[1:])
+                kernel = mt52(variance=variance, lengthscales=lengths)
+                model = gpflow.models.GPR((self.X_train, self.y_train),
+                                kernel=kernel)
+            
+                mean, cov = model.predict_y(self.X_test, full_cov=False)
+                mean = np.squeeze(mean.numpy())
+                cov = np.squeeze(cov.numpy())
+                probs.append(prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov)))
+            else:
+                """
+                can't fit a gp with 0 or -ve vals so just assign arbitrary small
+                value and warn the user that there is something wrong with their
+                proposal
+                """
+                print(f'Warning: negative or 0 value found in samples')
+                probs.append(1e-16)
         return np.array(probs)
 
 
 def main():
+    sample = [1,-2,1]
+    ans = all([s>0 for s in sample])
+    print(ans)
+    return
     import time
     n = 100
     X_train = np.random.rand(n,2)
