@@ -7,7 +7,7 @@ from SMC import prob_utils, initial_proposals, kernels, proposals, resamplers, t
 
 class SMC():
     def __init__(self, target_obj = target_functions.base_target(), 
-                 n_samples : int = None, 
+                 n_samples : int = 100, 
                  n_iters : int = None,
                  initial_proposal_obj = initial_proposals.Initial_Proposal(),
                  proposal_obj = proposals.Proposal(),
