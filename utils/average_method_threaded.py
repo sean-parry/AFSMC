@@ -1,15 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+import threading
 
 import os, sys
 sys.path.append(os.getcwd())
 from utils import methods, test_functions
 
 """
-this should be multithreaded, honeslty so should smc in places but there
-is nothing stopping every method_obj instance running on its own thread
-they all share nothing, we would just need a pause ocndition before summing
+might actually be slower on my laptop for 6 instances hopefully its faster
+for 30 instances at 200 func evals per instance
 """
 class AverageMethod():
     def __init__(self, 
@@ -20,8 +20,14 @@ class AverageMethod():
         self.method_objs = [copy.deepcopy(method_obj) for _ in range(n_method_instances)]
 
         # the part that should be mutlithreaded:
+        threads = []
         for meth in self.method_objs:
-            meth.run()
+            thread = threading.Thread(target=meth.run)
+            threads.append(thread)
+            thread.start()
+        
+        for thread in threads:
+            thread.join()
 
         self.n_instances = n_method_instances
         self.sum_regret = []
@@ -47,7 +53,7 @@ def main():
     am = AverageMethod(method_obj = 
             methods.NormalGp(func_class=test_functions.Branin,
                             n_iters=30), 
-                        n_method_instances=2)
+                        n_method_instances=30)
     am.print_individual_regret()
     return
 
