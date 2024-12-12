@@ -14,7 +14,7 @@ class SMC():
                  kernel_class = kernels.Approx_Opt,
                  resample_obj = resamplers.Staratified(),
                  n_star : int = None):
-        self.target = target_obj.p_sample
+        self.target_obj = target_obj
         self.n_samples = n_samples
         self.n_iters = n_iters
         self.n_star = self.n_samples/2 if n_star is None else n_star
@@ -50,9 +50,10 @@ class SMC():
         new_weights = []
         l_kern_probs = self.kernel_class(self.samples,new_samples).probs
         proposal_probs = self.proposal_obj.probs
-        # print(self.weights)
-        for i, new_s in enumerate(new_samples):
-            expr1 = self.target(new_s)/self.target(self.samples[i])
+        s_target_probs = self.target_obj.p_sample_batch(self.samples)
+        ns_target_probs = self.target_obj.p_sample_batch(new_samples)
+        for i, _ in enumerate(new_samples):
+            expr1 = ns_target_probs[i]/s_target_probs[i]
             expr2 = l_kern_probs[i]/proposal_probs[i]
             # expr2 = 1
             new_w = self.weights[i] * expr1 * expr2
@@ -80,16 +81,19 @@ class SMC():
         self.weights = np.array(initial_weights)
 
 
-    def run(self):
+    def run(self)->tuple[np.ndarray, np.ndarray]:
         """
+        returns weights, samples
         every time run is called we run the smc again - nothing is kept from 
         the previous run, if you wish to change something about the smc then
         just change one of the smc objects variables then call run
         """
         self.initialise_samples_and_weights()
         for _ in range(self.n_iters):
+            self.target_obj
             self.main_loop()
         self.norm_weights()
+        return self.weights, self.samples
 
 
 def main():

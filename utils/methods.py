@@ -92,7 +92,14 @@ class NormalGp(DefaultMethodClass):
 
 
 class SMC_GP(NormalGp):
+    """
+    probably should just move some stuff around and not inherit
+    from normal gp and instead inherit from default method class
+    since i overwrite 90% of stuff anyway but then default method
+    class would need more vars
+    """
     def __init__(self, func_class : test_functions.FuncToMinimise,
+                 smc_obj = smc_search.SMC(),
                  n_iters = 200,
                  n_random_evals = 20,
                  limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
@@ -100,15 +107,17 @@ class SMC_GP(NormalGp):
                          n_iters=n_iters,
                          n_random_evals=n_random_evals,
                          limits=limits)
+        self.smc_obj = smc_obj
         self.method_name = 'SMC GP'
 
     def run_smc(self)->list[np.ndarray, np.ndarray]:
-        # run smc on xtrain ytrain and get the weights and samples
-        # back
-        weights = [0.1,0.3,0.6]
+        # update X_train and y_train in the smc obj and run it
+        self.smc_obj.target_obj.update_xy(self.X_train, self.y_train)
+        weights, samples = self.smc_obj.run()
+        """weights = [0.1,0.3,0.6]
         samples = [[1,2,3],
                    [1,1,1],
-                   [1,3,3]]
+                   [1,3,3]]"""
         return weights, samples
 
     def average_acq_fun(self):
@@ -141,6 +150,7 @@ class SMC_GP(NormalGp):
         self._initial_random_evals()
         print(self.gen_sample())
         return
+
 
 def main():
     smc_gp =SMC_GP(func_class=test_functions.Branin)

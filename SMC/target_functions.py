@@ -9,14 +9,19 @@ from SMC import prob_utils
 
 
 class base_target():
-    def p_sample(sample : list[float])->float:
-        return
     def p_sample_batch(sample : list[list[float]])->list[float]:
         return
+    def update_xy(self, X : list[list[float]] = None, y : list[list[float]] = None):
+        print('No params to update in this method')
+        return
+
     
 class normal_dist_2d(base_target):
-    def p_sample(self, sample : list[float]):
-        return prob_utils.multivariate_normal_p(sample, [3, 2], np.eye(2)*0.5)
+    def p_sample_batch(self, samples : list[list[float]], mean : list[float] = [3,2], scale : float = 0.5):
+        probs = []
+        for sample in samples:
+            probs.append(prob_utils.multivariate_normal_p(sample, mean, np.eye(2)*scale))
+        return probs
 
 class gp_fit(base_target):
     """
@@ -25,13 +30,14 @@ class gp_fit(base_target):
     not sure if this is the best way or even the way that gpflow does it in
     their optimizers
     """
-    def __init__(self, X_all, y_all, train_test_split = 0.8):
-        self.X_all = np.array(X_all)
-        self.y_all = np.array(y_all)
-        self.n_samples = self.y_all.shape[0]
-
-        self.X_train, self.X_test, self.y_train, self.y_test = self._train_test_splitter(train_test_split)
-        
+    def __init__(self, X_all : list[list[float]] = None,
+                 y_all : list[list[float]] = None,
+                 train_test_split_f = 0.8):
+        if X_all is not None and y_all is not None:
+            self.X_all = np.array(X_all)
+            self.y_all = np.array(y_all)
+            self.n_samples = self.y_all.shape[0]
+        self.train_test_split_f = train_test_split_f
     
     def _train_test_splitter(self, train_test_split : float
                              )-> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -57,28 +63,13 @@ class gp_fit(base_target):
                 X_train.append(x)
                 y_train.append(y)
         return np.array(X_train), np.array(X_test), np.array(y_train), np.array(y_test)
-
-    def p_sample(self, sample : list[float]):
-        """
-        the sample is the hyperparams for the gp over the model space
-        """
-        if all(s>0 for s in sample):
-            variance = sample[:1][0]
-            lengths = (sample[1:])
-            kernel = mt52(variance=variance, lengthscales=lengths)
-            model = gpflow.models.GPR((self.X_train, self.y_train),
-                            kernel=kernel)
-
-            mean, cov = model.predict_y(self.X_test, full_cov=False)
-            mean = np.squeeze(mean.numpy())
-            cov = np.squeeze(cov.numpy())
-
-            return prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov))
-        else:
-            print(f'Warning: negative or 0 value found in sample')
-            return 1e-16
         
     def p_sample_batch(self, samples : list[list[float]]):
+        if self.X_all is None or self.y_all is None:
+            print('error X, or y is not defined')
+            return
+        
+        self.X_train, self.X_test, self.y_train, self.y_test = self._train_test_splitter(self.train_test_split_f)
         probs = []
         for sample in samples:
             if all(s>0 for s in sample):
@@ -101,6 +92,13 @@ class gp_fit(base_target):
                 print(f'Warning: negative or 0 value found in samples')
                 probs.append(1e-16)
         return np.array(probs)
+    
+    def update_xy(self, X : list[list[float]], y : list[list[float]]):
+        self.X_all = np.array(X)
+        self.y_all = np.array(y)
+        self.n_samples = self.y_all.shape[0]
+    
+
 
 
 def main():
