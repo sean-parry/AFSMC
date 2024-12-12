@@ -5,6 +5,7 @@ import scipy
 import os, sys
 sys.path.append(os.getcwd())
 from utils import acq_functions, test_functions
+from SMC import smc_search
 
 class DefaultMethodClass():
     def __init__(self, func_class,
@@ -38,6 +39,9 @@ class DefaultMethodClass():
         except:
             self.X_train = sample
             self.y_train = self.func_obj.eval(sample)
+    
+    def run(self):
+        return
 
 
 class NormalGp(DefaultMethodClass):
@@ -49,14 +53,11 @@ class NormalGp(DefaultMethodClass):
         super().__init__(func_class, limits)
 
         self.n_iters = n_iters - n_random_evals
-
-        self.initial_random_evals(n_random_evals)
-        self.iter_func_evals()
-
+        self.n_random_evals = n_random_evals
         self.method_name = "GP"
 
-    def initial_random_evals(self, n_rand):
-        samples = (np.random.rand(n_rand, self.dims) * self.limit_difs) + self.limit_mins
+    def _initial_random_evals(self):
+        samples = (np.random.rand(self.n_random_evals, self.dims) * self.limit_difs) + self.limit_mins
         for x in samples:
             self.eval_sample(x)
     
@@ -77,18 +78,74 @@ class NormalGp(DefaultMethodClass):
         res = scipy.optimize.minimize(fun= acq.sample ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
         return res.x
             
-    def iter_func_evals(self):
+    def _iter_func_evals(self):
         for i in range(self.n_iters):
             if i%(self.n_iters//10) == 0:
                 print(f'{i/(self.n_iters)*100} % done')
             sample = self.gen_sample()
             self.eval_sample(sample)
         print('Finished Evaling a GP')
+    
+    def run(self):
+        self._initial_random_evals()
+        self._iter_func_evals()
 
 
-class SMC_GP(DefaultMethodClass):
-    def __init__(self):
-        # probably should be definied similarly to gp then just run the 
-        # smc sampler to get the param values
-        # should be doable tomorrow
+class SMC_GP(NormalGp):
+    def __init__(self, func_class : test_functions.FuncToMinimise,
+                 n_iters = 200,
+                 n_random_evals = 20,
+                 limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
+        super().__init__(func_class=func_class,
+                         n_iters=n_iters,
+                         n_random_evals=n_random_evals,
+                         limits=limits)
+        self.method_name = 'SMC GP'
+
+    def run_smc(self)->list[np.ndarray, np.ndarray]:
+        # run smc on xtrain ytrain and get the weights and samples
+        # back
+        weights = [0.1,0.3,0.6]
+        samples = [[1,2,3],
+                   [1,1,1],
+                   [1,3,3]]
+        return weights, samples
+
+    def average_acq_fun(self):
+        models = []
+        self.weights, samples = self.run_smc()
+        for s in samples:
+            models.append(gpflow.models.GPR(
+            (self.X_train, self.y_train),
+            kernel = gpflow.kernels.Matern52(
+                variance=s[0],
+                lengthscales=s[1:])))
+        self.acq_funcs = [acq_functions.EI_np(gp, self.limits) for gp in models]
         return
+    
+    def sample_average_acq(self, x):
+        ans = []
+        for acq_func in self.acq_funcs:
+            ans.append(acq_func.sample(x))
+        ans = np.array(ans)
+        return sum(ans*self.weights)
+    
+    def gen_sample(self):
+        self.average_acq_fun()
+        self.weights, self.samples = self.run_smc()
+        x = (np.random.rand(1, self.dims) * self.limit_difs) + self.limit_mins
+        res = scipy.optimize.minimize(fun= self.sample_average_acq ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
+        return res.x
+    
+    def test(self):
+        self._initial_random_evals()
+        print(self.gen_sample())
+        return
+
+def main():
+    smc_gp =SMC_GP(func_class=test_functions.Branin)
+    smc_gp.test()
+    return
+
+if __name__ == '__main__':
+    main()
