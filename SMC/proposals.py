@@ -65,7 +65,8 @@ class Random_Walk(Proposal):
 class Defensive_Sampling(Proposal):
     def __init__(self, step_probs : list[float] = [0.9, 0.1], 
                  step_sizes : list[float] = [0.1, 1.0], 
-                 old_samples : list[list[float]] = None):
+                 old_samples : list[list[float]] = None,
+                 positive_only = True):
         super().__init__(old_samples)
 
         if sum(step_probs) == 1:
@@ -92,7 +93,8 @@ class Defensive_Sampling(Proposal):
         for i, (unif_prob, unscaled_noise, old_sample) in enumerate(zip(unif_probs, noise_arr, self.old_samples)):
             for cdf_prob, step_size in zip(self.cdf_probs[1:], self.step_sizes):
                 if unif_prob<cdf_prob:
-                    self.new_samples[i] = old_sample + unscaled_noise * step_size
+                    # this is terrible and makes the maths for weight updates wrong, need to remove the abs if i use this proposal
+                    self.new_samples[i] = abs(old_sample + unscaled_noise * step_size)
                     break
     
     def _calc_p(self):

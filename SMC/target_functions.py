@@ -91,8 +91,31 @@ class gp_fit(base_target):
                 """
                 print(f'Warning: negative or 0 value found in samples')
                 probs.append(1e-16)
-        return np.array(probs)
+        return np.log(np.array(probs))
     
+    def sample(self, sample):
+        self.X_train, self.X_test, self.y_train, self.y_test = self._train_test_splitter(self.train_test_split_f)
+        if all(s>0 for s in sample):
+                variance = sample[:1][0]
+                lengths = (sample[1:])
+                kernel = mt52(variance=variance, lengthscales=lengths)
+                model = gpflow.models.GPR((self.X_train, self.y_train),
+                                kernel=kernel)
+            
+                mean, cov = model.predict_y(self.X_test, full_cov=False)
+                mean = np.squeeze(mean.numpy())
+                cov = np.squeeze(cov.numpy())
+                prob = prob_utils.multivariate_normal_p(mean, np.squeeze(self.y_test), np.diag(cov))
+        else:
+            """
+            can't fit a gp with 0 or -ve vals so just assign arbitrary small
+            value and warn the user that there is something wrong with their
+            proposal
+            """
+            print(f'Warning: negative or 0 value found in samples')
+            prob = 1e-16
+        return prob
+
     def update_xy(self, X : list[list[float]], y : list[list[float]]):
         self.X_all = np.array(X)
         self.y_all = np.array(y)

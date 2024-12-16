@@ -32,13 +32,15 @@ class SMC():
         if sum_weights == 0 or np.isnan(sum_weights):
             self.weigths = [1,self.n_samples]*self.n_samples
         else:
-            self.weights /= sum_weights
+            new_weights = [w/sum_weights for w in self.weights]
+            self.weights = new_weights
 
     def calc_neff(self):
         """could be slow may want ot change to the matrix way of
         doing this"""
         sum_w_squared = 0
         for w in self.weights:
+            print(self.weights)
             sum_w_squared +=  w**2
         return 1/sum_w_squared
 
@@ -76,8 +78,9 @@ class SMC():
     def initialise_samples_and_weights(self):
         probs, self.samples = self.initial_proposal_obj.sample()
         initial_weights = []
-        for p, s in zip(probs, self.samples):
-            initial_weights.append(self.target(s)/p)
+        targ_probs = self.target_obj.p_sample_batch(self.samples)
+        for p, targ_p in zip(probs, targ_probs):
+            initial_weights.append(targ_p/p)
         self.weights = np.array(initial_weights)
 
 

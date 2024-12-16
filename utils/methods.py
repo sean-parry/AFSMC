@@ -4,8 +4,9 @@ import scipy
 
 import os, sys
 sys.path.append(os.getcwd())
+import SMC.target_functions
 from utils import acq_functions, test_functions
-from SMC import smc_search
+import SMC
 
 class DefaultMethodClass():
     def __init__(self, func_class,
@@ -99,7 +100,7 @@ class SMC_GP(NormalGp):
     class would need more vars
     """
     def __init__(self, func_class : test_functions.FuncToMinimise,
-                 smc_obj = smc_search.SMC(),
+                 smc_obj = SMC.smc_search.SMC(),
                  n_iters = 200,
                  n_random_evals = 20,
                  limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
@@ -153,8 +154,15 @@ class SMC_GP(NormalGp):
 
 
 def main():
-    smc_gp =SMC_GP(func_class=test_functions.Branin)
-    smc_gp.test()
+    smc_gp =SMC_GP(func_class=test_functions.Branin,
+                   smc_obj = SMC.smc_search.SMC(target_obj = SMC.target_functions.gp_fit(),
+                                                n_samples = 30,
+                                                n_iters = 30,
+                                                initial_proposal_obj = SMC.initial_proposals.Gauss(),
+                                                proposal_obj = SMC.proposals.Defensive_Sampling(),
+                                                ),
+                    n_iters=30)
+    smc_gp.run()
     return
 
 if __name__ == '__main__':

@@ -24,6 +24,7 @@ class Strandard_Gauss_Noise(Initial_Proposal):
         self.dim_samples = dim_samples
     
     def _calc_p(self):
+        self.probs = []
         for s in self.samples:
             p = prob_utils.multivariate_normal_p(s, [0]*self.dim_samples, np.eye(self.dim_samples))
             self.probs.append(p)
@@ -63,6 +64,7 @@ class Gauss(Initial_Proposal):
         """
         this will be slow the way i am doing it
         """
+        self.probs = []
         dirs = np.array(np.meshgrid(*[[-1, 1]] * self.dim_samples)).T.reshape(-1, self.dim_samples)
         for s in self.samples:
             p = 0
