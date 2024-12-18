@@ -4,3 +4,4 @@ import SMC.prob_utils as prob_utils
 import SMC.proposals as proposals
 import SMC.resamplers as resamplers
 import SMC.smc_search as smc_search
+import SMC.target_functions as target_functions
