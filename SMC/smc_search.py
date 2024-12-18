@@ -40,7 +40,6 @@ class SMC():
         doing this"""
         sum_w_squared = 0
         for w in self.weights:
-            print(self.weights)
             sum_w_squared +=  w**2
         return 1/sum_w_squared
 
@@ -98,6 +97,10 @@ class SMC():
         self.norm_weights()
         return self.weights, self.samples
 
+    def update_target_vars(self,
+                           X_all : list[list[float]],
+                           y_all : list[list[float]]):
+        self.target_obj.update_xy(X_all, y_all)
 
 def main():
     # just some dummy vars

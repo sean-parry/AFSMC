@@ -83,6 +83,7 @@ class NormalGp(DefaultMethodClass):
             if i%(self.n_iters//10) == 0:
                 print(f'{i/(self.n_iters)*100} % done')
             sample = self.gen_sample()
+            print(sample)
             self.eval_sample(sample)
         print('Finished Evaling a GP')
     
@@ -112,7 +113,7 @@ class SMC_GP(NormalGp):
 
     def run_smc(self)->list[np.ndarray, np.ndarray]:
         # update X_train and y_train in the smc obj and run it
-        self.smc_obj.target_obj.update_xy(self.X_train, self.y_train)
+        self.smc_obj.update_target_vars(self.X_train, self.y_train)
         weights, samples = self.smc_obj.run()
         """weights = [0.1,0.3,0.6]
         samples = [[1,2,3],
@@ -145,17 +146,57 @@ class SMC_GP(NormalGp):
         x = (np.random.rand(1, self.dims) * self.limit_difs) + self.limit_mins
         res = scipy.optimize.minimize(fun= self.sample_average_acq ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
         return res.x
-    
-    def test(self):
-        self._initial_random_evals()
-        print(self.gen_sample())
-        return
 
 
 def main():
-    smc_gp =SMC_GP(func_class=test_functions.Branin)
-    smc_gp.test()
+    smc_gp = SMC_GP(
+        func_class = test_functions.Branin,
+        smc_obj=SMC.smc_search.SMC(
+            target_obj=SMC.target_functions.gp_fit(),
+            n_samples = 30,
+            n_iters = 20,
+            initial_proposal_obj=SMC.initial_proposals.Gauss(),
+            proposal_obj=SMC.proposals.Defensive_Sampling(),
+    ),
+    n_iters=30)
+
+    smc_gp.run()
+    print(smc_gp.get_regret())
     return
 
 if __name__ == '__main__':
     main()
+
+"""
+just saving an output of a 20 random evals, 10 iters of smc
+search (at 30 samples, 20 iters)  remove once better proposal 
+is written:
+not sure why it evals the same point twice to begin with that could
+point to some underlying issue that need solving
+
+[10.  0.]
+10.0 % done
+[10.  0.]
+20.0 % done
+[2.90469878 0.78380738]
+30.0 % done
+[9.12073278 2.24607226]
+40.0 % done
+[9.30237569 0.77968554]
+50.0 % done
+[-2.50583354 15.        ]
+60.0 % done
+[-0.83464552  2.58877061]
+70.0 % done
+[10.         1.6211035]
+80.0 % done
+[6.05687869 1.20225637]
+90.0 % done
+[3.58288607 1.40066145]
+Finished Evaling a GP
+[69.44142142 12.79568249 12.79568249  6.7450766   6.7450766   1.39248889
+  1.39248889  1.39248889  1.39248889  1.39248889  1.39248889  1.39248889
+  1.39248889  1.39248889  1.39248889  1.39248889  1.39248889  1.39248889
+  1.39248889  1.39248889  1.39248889  1.39248889  1.39248889  0.44066144
+  0.44066144  0.44066144  0.44066144  0.44066144  0.44066144  0.44066144]
+"""

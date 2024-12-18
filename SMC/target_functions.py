@@ -92,7 +92,7 @@ class gp_fit(base_target):
                 """
                 print(f'Warning: negative or 0 value found in samples')
                 probs.append(1e-16)
-        return np.array(probs)
+        return np.log(np.array(probs))
     
     def sample(self, sample):
         self.X_train, self.X_test, self.y_train, self.y_test = self._train_test_splitter(self.train_test_split_f)
