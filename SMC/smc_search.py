@@ -3,7 +3,7 @@ import numpy as np
 #probably not the pretiest way of fixing the import issues but it works
 import os, sys
 sys.path.append(os.getcwd())
-from SMC import prob_utils, initial_proposals, kernels, proposals, resamplers, target_functions
+from SMC import initial_proposals, kernels, proposals, resamplers, target_functions
 
 class SMC():
     def __init__(self, target_obj = target_functions.base_target(), 
@@ -100,32 +100,22 @@ class SMC():
 
 
 def main():
-    smc = SMC(target_obj=target_functions.normal_dist_2d(),
-              n_samples=100,
+    # just some dummy vars
+    x_all ,y_all = np.random.rand(20,2), np.random.rand(20,1)
+    smc = SMC(target_obj=target_functions.gp_fit(X_all=x_all,
+                                                 y_all=y_all),
+              n_samples=10,
               n_iters=100,
               initial_proposal_obj=initial_proposals.Strandard_Gauss_Noise(dim_samples = 2),
               proposal_obj= proposals.Defensive_Sampling())
     
-    for _ in range(2):
-        smc.run()
-        sum_w = 0
-        ans = [0,0]
-        for s, w in zip(smc.samples, smc.weights):
-            # print(f'sample value: {s}, weight value {w}')
-            sum_w += w
-            ans += s*w
-        print(f'total weight sum: {sum_w}')
-        print(f'estimate is {ans}')
+
+    smc.run()
+  
+    samples, weights  = smc.samples, smc.weights
+    for s, w in zip(samples,weights):
+        print(s , w)
     return
 
 if __name__== '__main__':
     main()
-
-"""
-Its hard to say whether we actually see an improvement using the approx opt l kernel
-just choosing the l kernel to cancel with the forward proposal - also worth saying that 
-using random walk without varying the step size will just make the output very poor
-
-should just try a more sensible proposal - are one with gradients acceptable or does 
-that not allow a weight update, 
-"""

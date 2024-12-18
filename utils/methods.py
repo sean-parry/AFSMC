@@ -4,7 +4,6 @@ import scipy
 
 import os, sys
 sys.path.append(os.getcwd())
-import SMC.target_functions
 from utils import acq_functions, test_functions
 import SMC
 
@@ -154,15 +153,8 @@ class SMC_GP(NormalGp):
 
 
 def main():
-    smc_gp =SMC_GP(func_class=test_functions.Branin,
-                   smc_obj = SMC.smc_search.SMC(target_obj = SMC.target_functions.gp_fit(),
-                                                n_samples = 30,
-                                                n_iters = 30,
-                                                initial_proposal_obj = SMC.initial_proposals.Gauss(),
-                                                proposal_obj = SMC.proposals.Defensive_Sampling(),
-                                                ),
-                    n_iters=30)
-    smc_gp.run()
+    smc_gp =SMC_GP(func_class=test_functions.Branin)
+    smc_gp.test()
     return
 
 if __name__ == '__main__':
