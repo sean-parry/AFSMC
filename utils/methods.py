@@ -4,7 +4,7 @@ import scipy
 
 import os, sys
 sys.path.append(os.getcwd())
-from utils import acq_functions, test_functions
+from utils import acq_functions, test_functions, plotter
 import SMC
 
 class DefaultMethodClass():
@@ -48,15 +48,19 @@ class NormalGp(DefaultMethodClass):
     def __init__(self, func_class : test_functions.FuncToMinimise,
                  n_iters = 200,
                  n_random_evals = 20,
-                 limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
+                 limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)],
+                 random_eval_seed : int = None):
         
         super().__init__(func_class, limits)
 
         self.n_iters = n_iters - n_random_evals
         self.n_random_evals = n_random_evals
+        self.random_eval_seed = random_eval_seed
+
         self.method_name = "GP"
 
     def _initial_random_evals(self):
+        np.random.seed(seed=self.random_eval_seed)
         samples = (np.random.rand(self.n_random_evals, self.dims) * self.limit_difs) + self.limit_mins
         for x in samples:
             self.eval_sample(x)
@@ -91,6 +95,15 @@ class NormalGp(DefaultMethodClass):
         self._initial_random_evals()
         self._iter_func_evals()
 
+    def test_plotter(self):
+        self._initial_random_evals()
+        gp = self.get_gp()
+        acq = acq_functions.EI_np(gp, self.limits)
+        print('got to the plotting bit')
+        plotter.plot_ei_2d(sample_acq_func=acq.sample)
+        return
+        
+
 
 class SMC_GP(NormalGp):
     """
@@ -103,11 +116,13 @@ class SMC_GP(NormalGp):
                  smc_obj = SMC.smc_search.SMC(),
                  n_iters = 200,
                  n_random_evals = 20,
-                 limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)]):
+                 limits : list[tuple[float]] = [(-5.0,10.0),(0.0,15.0)],
+                 random_eval_seed : int = None):
         super().__init__(func_class=func_class,
                          n_iters=n_iters,
                          n_random_evals=n_random_evals,
-                         limits=limits)
+                         limits=limits,
+                         random_eval_seed=random_eval_seed)
         self.smc_obj = smc_obj
         self.method_name = 'SMC GP'
 
@@ -157,6 +172,11 @@ def main():
     # comes from the walking anyway so this wouldn't really make a large
     # difference in the accuracy of a gp especially one focusing on a
     # static target
+    normalgp = NormalGp(func_class=test_functions.Branin,
+                        n_random_evals=200,
+                        random_eval_seed=None)
+    normalgp.test_plotter()
+    return
     smc_gp = SMC_GP(
         func_class = test_functions.Branin,
         smc_obj=SMC.smc_search.SMC(
