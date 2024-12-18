@@ -149,6 +149,14 @@ class SMC_GP(NormalGp):
 
 
 def main():
+    # maybe a sample size incease inside of the smc would reduce
+    # the weight degredation especially since you'd get more
+    # so better intial proposals (after a resample) arguably
+    # you should start with a large proposal and then cut down the
+    # samples to something more manageable - but arguably the divergence
+    # comes from the walking anyway so this wouldn't really make a large
+    # difference in the accuracy of a gp especially one focusing on a
+    # static target
     smc_gp = SMC_GP(
         func_class = test_functions.Branin,
         smc_obj=SMC.smc_search.SMC(
