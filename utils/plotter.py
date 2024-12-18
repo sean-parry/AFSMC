@@ -26,7 +26,7 @@ class plot_ei_2d():
     def __init__(self, 
                  sample_acq_func,
                  limits: list[tuple[float]] = [(-5.0, 10.0), (0.0, 15.0)],
-                 step_size: float = 0.5):
+                 step_size: float = 0.25):
         
         self.limits = limits
         self.targ = sample_acq_func

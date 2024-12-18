@@ -29,3 +29,10 @@ class Branin(FuncToMinimise):
         self._eval_vals.append(_branin(x))
         self._update_regret()
         return self._eval_vals[-1]
+
+def main():
+    import plotter
+    plotter.plot_ei_2d(Branin().eval)
+
+if __name__ == '__main__':
+    main()

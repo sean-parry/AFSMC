@@ -9,16 +9,16 @@ class EI_np():
         self.limits = limits
 
     def _expected_improvement(self, x, y_best):
-        mean, var = self.gp.predict_f(x)
-        mean = torch.tensor(mean.numpy(), dtype=torch.float64)
-        var = torch.tensor(var.numpy(), dtype=torch.float64)
+        mean_sample, var_sample = self.gp.predict_f(x)
+        mean_sample = torch.tensor(mean_sample.numpy(), dtype=torch.float64)
+        var_sample = torch.tensor(var_sample.numpy(), dtype=torch.float64)
 
-        std = torch.sqrt(var)
+        std = torch.sqrt(var_sample)
         std = torch.maximum(std, torch.tensor(1e-9, dtype=torch.float64))
 
-        z = (mean - y_best) / std
+        z = (y_best-mean_sample) / std
 
-        ei = (mean - y_best) * torch.sigmoid(z) + std * torch.exp(-0.5 * torch.square(z)) / torch.tensor(np.sqrt(2 * np.pi), dtype=torch.float64)
+        ei = (y_best-mean_sample) * torch.sigmoid(z) + std * torch.exp(-0.5 * torch.square(z)) / torch.tensor(np.sqrt(2 * np.pi), dtype=torch.float64)
 
         return ei
 

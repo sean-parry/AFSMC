@@ -79,7 +79,7 @@ class NormalGp(DefaultMethodClass):
         # might want this to start at curr best x idk tho
         x = (np.random.rand(1, self.dims) * self.limit_difs) + self.limit_mins
 
-        res = scipy.optimize.minimize(fun= acq.sample ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
+        res = scipy.optimize.minimize(fun= -1*acq.sample ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
         return res.x
             
     def _iter_func_evals(self):
@@ -159,7 +159,7 @@ class SMC_GP(NormalGp):
         self.average_acq_fun()
         self.weights, self.samples = self.run_smc()
         x = (np.random.rand(1, self.dims) * self.limit_difs) + self.limit_mins
-        res = scipy.optimize.minimize(fun= self.sample_average_acq ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
+        res = scipy.optimize.minimise(fun= -1*self.sample_average_acq ,x0= x.flatten(), method='L-BFGS-B', bounds=self.limits)
         return res.x
 
 
